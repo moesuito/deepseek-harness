@@ -124,46 +124,144 @@ function waitForHttpServer(port, timeoutMs = 45000) {
 
 // Find Node.js runtime executable
 function findNodeExecutable() {
-  if (process.platform === 'win32') {
-    return 'node';
-  }
+  const isWin = process.platform === 'win32';
+  const homeDir = os.homedir();
+
   const candidatePaths = [
-    '/usr/bin/node',
-    '/usr/local/bin/node',
-    '/home/alano/.nvm/versions/node/current/bin/node'
-  ];
+    ...(isWin ? [
+      'C:\\Program Files\\nodejs\\node.exe',
+      'C:\\Program Files (x86)\\nodejs\\node.exe',
+      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'nodejs', 'node.exe'),
+      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'node', 'node.exe'),
+      path.join(process.env.APPDATA || '', 'nvm', 'current', 'node.exe'),
+      path.join(homeDir, '.nvm', 'versions', 'node', 'current', 'node.exe'),
+      path.join(homeDir, '.fnm', 'current', 'node.exe'),
+      path.join(homeDir, '.volta', 'bin', 'node.exe')
+    ] : [
+      '/usr/bin/node',
+      '/usr/local/bin/node',
+      path.join(homeDir, '.nvm/versions/node/current/bin/node'),
+      path.join(homeDir, '.fnm/current/bin/node'),
+      path.join(homeDir, '.volta/bin/node'),
+      path.join(homeDir, '.local/bin/node')
+    ])
+  ].filter(Boolean);
 
   for (const p of candidatePaths) {
-    if (fs.existsSync(p)) {
-      return p;
-    }
+    try {
+      if (fs.existsSync(p)) {
+        return p;
+      }
+    } catch {}
   }
 
   try {
-    const fromWhich = execSync('which node', { encoding: 'utf8' }).trim();
+    const lookupCmd = isWin ? 'where.exe node' : 'which node';
+    const fromWhich = execSync(lookupCmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().split(/\r?\n/)[0];
     if (fromWhich && fs.existsSync(fromWhich)) return fromWhich;
-  } catch (e) {}
+  } catch {}
 
-  return 'node';
+  return isWin ? 'node.exe' : 'node';
 }
 
 // Locate dsh script or executable
 function findDshTarget() {
-  const relativeCli = path.resolve(__dirname, '../../cli/lib/bin.js');
-  const customPaths = [
-    relativeCli,
+  const homeDir = os.homedir();
+  const isWin = process.platform === 'win32';
+
+  const candidatePaths = [
+    // Relative to current directory in dev mode
+    path.resolve(__dirname, '../../cli/lib/bin.js'),
+    path.resolve(__dirname, '../../apps/cli/lib/bin.js'),
+    path.resolve(__dirname, '../../../apps/cli/lib/bin.js'),
+    path.resolve(process.cwd(), 'apps/cli/lib/bin.js'),
+    path.resolve(process.cwd(), 'lib/bin.js'),
+
+    // App resources path
+    process.resourcesPath ? path.join(process.resourcesPath, 'apps/cli/lib/bin.js') : null,
+    process.resourcesPath ? path.join(process.resourcesPath, 'cli/lib/bin.js') : null,
+    process.resourcesPath ? path.join(process.resourcesPath, 'app/apps/cli/lib/bin.js') : null,
+
+    // Common repo locations
+    isWin ? 'C:\\Antigravity\\deepseek-harness\\apps\\cli\\lib\\bin.js' : null,
+    path.join(homeDir, 'Antigravity', 'deepseek-harness', 'apps', 'cli', 'lib', 'bin.js'),
+    path.join(homeDir, 'deepseek-harness', 'apps', 'cli', 'lib', 'bin.js'),
+    path.join(homeDir, 'Projects', 'deepseek-harness', 'apps', 'cli', 'lib', 'bin.js'),
     '/home/alano/Antigravity/deepseek-harness/apps/cli/lib/bin.js',
-    '/home/alano/.local/bin/dsh',
-    '/usr/local/bin/dsh',
-    '/usr/bin/dsh'
+
+    // Global / user binaries
+    ...(isWin ? [
+      path.join(process.env.APPDATA || '', 'npm', 'dsh.cmd'),
+      path.join(process.env.LOCALAPPDATA || '', 'pnpm', 'dsh.cmd'),
+      path.join(process.env.LOCALAPPDATA || '', 'pnpm', 'dsh.exe'),
+      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'nodejs', 'dsh.cmd'),
+      path.join(homeDir, 'AppData', 'Roaming', 'npm', 'dsh.cmd'),
+      path.join(homeDir, 'AppData', 'Local', 'pnpm', 'dsh.cmd'),
+      path.join(homeDir, '.local', 'bin', 'dsh.cmd'),
+      path.join(homeDir, '.local', 'bin', 'dsh.exe')
+    ] : [
+      path.join(homeDir, '.local', 'bin', 'dsh'),
+      path.join(homeDir, '.pnpm-global', 'bin', 'dsh'),
+      '/usr/local/bin/dsh',
+      '/usr/bin/dsh'
+    ])
+  ].filter(Boolean);
+
+  for (const p of candidatePaths) {
+    try {
+      if (fs.existsSync(p)) {
+        return p;
+      }
+    } catch {}
+  }
+
+  try {
+    const lookupCmd = isWin ? 'where.exe dsh' : 'which dsh';
+    const found = execSync(lookupCmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().split(/\r?\n/)[0];
+    if (found && fs.existsSync(found)) {
+      return found;
+    }
+  } catch {}
+
+  return isWin ? 'dsh.cmd' : 'dsh';
+}
+
+function getEnhancedEnv() {
+  const isWin = process.platform === 'win32';
+  const homeDir = os.homedir();
+  const delimiter = path.delimiter;
+
+  const extraPaths = isWin ? [
+    'C:\\Program Files\\nodejs',
+    'C:\\Program Files (x86)\\nodejs',
+    path.join(process.env.APPDATA || '', 'npm'),
+    path.join(process.env.LOCALAPPDATA || '', 'pnpm'),
+    path.join(process.env.LOCALAPPDATA || '', 'Programs', 'nodejs'),
+    path.join(homeDir, 'AppData', 'Roaming', 'npm'),
+    path.join(homeDir, 'AppData', 'Local', 'pnpm'),
+    path.join(homeDir, '.local', 'bin')
+  ] : [
+    path.join(homeDir, '.local', 'bin'),
+    path.join(homeDir, '.pnpm-global', 'bin'),
+    path.join(homeDir, '.nvm', 'versions', 'node', 'current', 'bin'),
+    '/usr/local/bin',
+    '/usr/bin',
+    '/bin'
   ];
 
-  for (const p of customPaths) {
-    if (fs.existsSync(p)) {
-      return p;
-    }
-  }
-  return 'dsh';
+  const currentPath = process.env.PATH || '';
+  const mergedPath = [
+    ...extraPaths.filter(p => {
+      try { return fs.existsSync(p); } catch { return false; }
+    }),
+    currentPath
+  ].join(delimiter);
+
+  return {
+    ...process.env,
+    PATH: mergedPath,
+    NODE_ENV: 'production'
+  };
 }
 
 // Start backend process
@@ -183,7 +281,9 @@ async function startBackend(port) {
   appendLog(msg);
 
   let cmd, args;
-  if (dshTarget.endsWith('.js')) {
+  const isWin = process.platform === 'win32';
+
+  if (dshTarget.endsWith('.js') || dshTarget.endsWith('.ts') || dshTarget.endsWith('.mjs')) {
     cmd = nodeBin;
     args = [dshTarget, 'web', '--no-open', '--port', String(port)];
   } else {
@@ -191,24 +291,29 @@ async function startBackend(port) {
     args = ['web', '--no-open', '--port', String(port)];
   }
 
-  const env = {
-    ...process.env,
-    PATH: `${process.env.PATH || ''}:/home/alano/.local/bin:/usr/local/bin:/usr/bin`,
-    NODE_ENV: 'production'
-  };
+  const env = getEnhancedEnv();
+  const useShell = isWin && !cmd.toLowerCase().endsWith('.exe');
 
   backendProcess = spawn(cmd, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
-    env
+    env,
+    shell: useShell,
+    windowsHide: true
   });
 
-  backendProcess.stdout.on('data', (data) => {
+  backendProcess.on('error', (err) => {
+    const errMsg = `Backend process spawn error: ${err.message}`;
+    console.error(errMsg);
+    appendLog(errMsg);
+  });
+
+  backendProcess.stdout?.on('data', (data) => {
     const text = data.toString().trim();
     console.log(`[dsh backend]: ${text}`);
     appendLog(`[stdout] ${text}`);
   });
 
-  backendProcess.stderr.on('data', (data) => {
+  backendProcess.stderr?.on('data', (data) => {
     const text = data.toString().trim();
     console.error(`[dsh backend err]: ${text}`);
     appendLog(`[stderr] ${text}`);
@@ -227,17 +332,24 @@ function stopBackend() {
     console.log('Terminating backend process...');
     appendLog('Terminating backend process...');
     try {
-      backendProcess.kill('SIGTERM');
-      setTimeout(() => {
-        if (backendProcess && !backendProcess.killed) {
-          backendProcess.kill('SIGKILL');
-        }
-      }, 1500);
+      if (process.platform === 'win32' && backendProcess.pid) {
+        try {
+          execSync(`taskkill /pid ${backendProcess.pid} /T /F`, { stdio: 'ignore' });
+        } catch {}
+      } else {
+        backendProcess.kill('SIGTERM');
+        setTimeout(() => {
+          if (backendProcess && !backendProcess.killed) {
+            backendProcess.kill('SIGKILL');
+          }
+        }, 1500);
+      }
     } catch (e) {
       console.error('Error stopping backend:', e);
     }
   }
 }
+
 
 // Create application menu
 function createMenu() {

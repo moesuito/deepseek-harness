@@ -40,4 +40,5 @@ worktrees/
 .agents/worktrees/
 .typert-*/
 UPDATE_POLICY.md
+apps/desktop/release/
 

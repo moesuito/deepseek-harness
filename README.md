@@ -1,59 +1,122 @@
-# DeepSeek Harness
+# DeepSeek Harness (Desktop & CLI)
 
-English | [中文](README.zh.md)
+<p align="center">
+  <img src="apps/desktop/build/icon.png" width="128" height="128" alt="DeepSeek Harness Logo" />
+</p>
 
-DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
+<p align="center">
+  <strong>An open-source, extensible Agent Harness platform where <em>Everything is a Plugin</em>.</strong>
+</p>
 
-It uses an architecture where **everything is a plugin**, and is powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://github.com/cordiverse/paper).
+<p align="center">
+  <a href="https://github.com/moesuito/deepseek-harness/releases"><img src="https://img.shields.io/github/v/release/moesuito/deepseek-harness?style=flat-square&color=4D6BFE" alt="Release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License" /></a>
+  <a href="https://deepseek.com"><img src="https://img.shields.io/badge/DeepSeek-AI-4D6BFE.svg?style=flat-square" alt="DeepSeek AI" /></a>
+</p>
 
-## Developer preview
+---
 
-DeepSeek Harness is currently in _developer preview_ and is iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
+## 🖥️ DeepSeek Harness Desktop
 
-## Run
+This repository provides both the core **DeepSeek Harness (`dsh`)** platform and the **native Electron Desktop Application** (`deepseek-harness`) for **Linux** and **Windows**.
 
-### Run from `npm`
+### Key Desktop Features
+- 🚀 **Zero-Config Backend Management**: Automatically starts and manages the embedded `dsh` backend process in the background.
+- 🎨 **Modern Native Interface**: Clean, dark-mode native window with official high-resolution DeepSeek branding and app icons.
+- 🔄 **Clean Process Lifecycle**: Automatic graceful teardown of child background processes when closing the application.
+- ⚡ **Cross-Platform**: Available as an installable `.deb` / `AppImage` for Linux and `.exe` (NSIS Installer) for Windows.
 
-Install `Node.js`, then run:
+### 📥 Download Pre-built Desktop App
 
-```sh
-npx @deepseek-ai/dsh web
+You can download the latest installers directly from the **[GitHub Releases](https://github.com/moesuito/deepseek-harness/releases)** page:
+
+| Platform | Package Format | Download Link |
+| :--- | :--- | :--- |
+| **Linux (Ubuntu / Debian)** | `.deb` package | [Download .deb](https://github.com/moesuito/deepseek-harness/releases/latest) |
+| **Windows (10 / 11)** | `.exe` installer | [Download .exe](https://github.com/moesuito/deepseek-harness/releases/latest) |
+
+#### Linux Installation:
+```bash
+sudo dpkg -i deepseek-harness_0.1.1_amd64.deb
+```
+Once installed, search for **DeepSeek Harness** in your application launcher or launch from terminal:
+```bash
+deepseek-harness
 ```
 
-The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it in the default browser for a local launch. An SSH launch only prints the host URL because the SSH client or editor owns the local forwarded address. Pass `--no-open` to run the server without opening a browser. See [Web UI guide](docs/user/guide/index.md).
+---
 
-### Run from source
+## 🛠️ Run via CLI & Web
 
-To run from a repository checkout:
+### Run from `npm` / `npx`
+Install `Node.js >= 22`, then run:
+```bash
+npx @deepseek-ai/dsh web
+```
+The command starts the Web UI at `http://127.0.0.1:3080` by default.
 
-```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
+### Run from Source
+To run from this repository checkout:
+```bash
+git clone https://github.com/moesuito/deepseek-harness.git
 cd deepseek-harness
 pnpm install
 pnpm run build
+
+# Start the Web UI
 pnpm dsh web
+
+# Or launch the Electron Desktop App in development mode
+cd apps/desktop && pnpm start
 ```
 
-`pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
+---
 
-## Community and support
+## 📦 Building Desktop Installers
 
-- Feel free to submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
-- Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
-- Join <a href="https://discord.gg/Ycq5dCaS4">DeepSeek Harness Discord community</a>.
+To package the desktop application yourself:
 
-## Contributing
+```bash
+cd apps/desktop
+pnpm install
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+# Build Linux .deb package
+pnpm run dist:deb
 
-## Development
+# Build Linux AppImage
+pnpm run dist:appimage
 
-Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md).
+# Build Windows .exe installer
+pnpm run dist:win
+```
+The packaged installers will be generated inside `apps/desktop/release/`.
 
-For agents, follow [AGENTS.md](AGENTS.md).
+---
 
-## License
+## 🧩 Architecture & Philosophy
 
-[MIT](LICENSE)
+DeepSeek Harness is powered by [Cordis](https://github.com/cordiverse/cordis), described in [*A Programming Paradigm for Spatiotemporal Composability*](https://github.com/cordiverse/paper). 
 
-Third-party dependencies and their licenses are disclosed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Every capability in the system is structured as an isolated, modular plugin:
+- **Models**: Pluggable LLM backends (DeepSeek, OpenAI, Anthropic, local runners).
+- **Tools & Skills**: Filesystem, bash/pwsh terminal execution, MCP client integration, session management.
+- **Sessions & Storage**: Real-time context projection, conversation histories, and persistent workspaces.
+
+For more technical details, refer to:
+- [Development Guide](docs/development.md)
+- [Architecture Documentation](docs/architecture.md)
+- [Agent Guidance](AGENTS.md)
+
+---
+
+## 💬 Community and Support
+
+- Submit feedback and questions through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
+- Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to discover or share plugins.
+- Join the [DeepSeek Harness Discord Community](https://discord.gg/Ycq5dCaS4).
+
+---
+
+## 📄 License
+
+[MIT](LICENSE) © DeepSeek AI & Contributors.

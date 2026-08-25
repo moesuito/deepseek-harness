@@ -1,0 +1,69 @@
+{
+  "name": "deepseek-harness",
+  "productName": "DeepSeek Harness",
+  "version": "0.1.1",
+  "homepage": "https://github.com/deepseek-ai/deepseek-harness",
+  "description": "DeepSeek Harness Desktop Application",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:deb": "electron-builder --linux deb",
+    "dist:appimage": "electron-builder --linux AppImage",
+    "dist:win": "electron-builder --win nsis"
+  },
+  "keywords": [
+    "deepseek",
+    "dsh",
+    "electron",
+    "ai",
+    "agent",
+    "harness"
+  ],
+  "author": "DeepSeek AI",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.deepseek.harness",
+    "productName": "DeepSeek Harness",
+    "executableName": "deepseek-harness",
+    "copyright": "Copyright © 2026 DeepSeek AI",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "src/**/*",
+      "build/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        "deb",
+        "AppImage"
+      ],
+      "icon": "build/icons",
+      "category": "Development",
+      "maintainer": "Alano <alano@local>",
+      "synopsis": "DeepSeek Harness Agent Platform",
+      "desktop": {
+        "StartupWMClass": "deepseek-harness",
+        "Name": "DeepSeek Harness",
+        "Comment": "DeepSeek Harness Desktop Application",
+        "Categories": "Development;Utility;",
+        "Keywords": "deepseek;harness;ai;llm;agent;dsh;"
+      }
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

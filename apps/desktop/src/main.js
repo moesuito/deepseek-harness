@@ -3,7 +3,9 @@ const path = require('path');
 const http = require('http');
 const net = require('net');
 const fs = require('fs');
+const os = require('os');
 const { spawn, execSync } = require('child_process');
+const { checkForUpdates, downloadFile, applyUpdate } = require('./updater.js');
 
 // App identities for Desktop environments
 app.setName('DeepSeek Harness');
@@ -300,6 +302,44 @@ function createMenu() {
       label: 'Help',
       submenu: [
         {
+          label: 'Check for Updates...',
+          click: async () => {
+            const currentVer = app.getVersion() || '0.2.0';
+            const update = await checkForUpdates(currentVer);
+            if (update && update.hasUpdate) {
+              const { response } = await dialog.showMessageBox(mainWindow, {
+                type: 'question',
+                buttons: ['Update Now', 'Later'],
+                defaultId: 0,
+                cancelId: 1,
+                title: 'Update Available',
+                message: `A new version of DeepSeek Harness is available (v${update.version})!`,
+                detail: `Release: ${update.releaseName}\n\nWould you like to download and install it now?`
+              });
+              if (response === 0 && update.asset) {
+                const ext = path.extname(update.asset.name);
+                const tempInstallerPath = path.join(os.tmpdir(), `deepseek-harness-update-${update.version}${ext}`);
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Downloading Update',
+                  message: 'Downloading update in the background...',
+                  buttons: ['OK']
+                });
+                await downloadFile(update.asset.browser_download_url, tempInstallerPath);
+                await applyUpdate(tempInstallerPath);
+              }
+            } else {
+              dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'No Updates',
+                message: 'You are using the latest version of DeepSeek Harness!',
+                buttons: ['OK']
+              });
+            }
+          }
+        },
+        { type: 'separator' },
+        {
           label: 'DeepSeek Harness Documentation',
           click: () => {
             shell.openExternal('https://github.com/deepseek-ai/deepseek-harness');
@@ -312,7 +352,7 @@ function createMenu() {
               type: 'info',
               title: 'About DeepSeek Harness',
               message: 'DeepSeek Harness Desktop',
-              detail: `Version: 0.1.1\nDeepSeek Harness Platform\nPowered by Electron & Cordis`,
+              detail: `Version: ${app.getVersion() || '0.2.0'}\nDeepSeek Harness Platform\nPowered by Electron & Cordis`,
               buttons: ['OK']
             });
           }
@@ -340,7 +380,7 @@ async function createMainWindow() {
     y: windowState.y,
     minWidth: 960,
     minHeight: 640,
-    backgroundColor: '#0d1117',
+    backgroundColor: '#0b0d13',
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -363,6 +403,52 @@ async function createMainWindow() {
   // Load splash screen first
   mainWindow.loadFile(path.join(__dirname, 'splash.html'));
   mainWindow.show();
+
+  // Helper to update splash status text
+  const setSplashStatus = (text) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.executeJavaScript(`
+        const el = document.getElementById('status-text');
+        if (el) el.textContent = ${JSON.stringify(text)};
+      `).catch(() => {});
+    }
+  };
+
+  // Check for updates before booting backend
+  try {
+    const currentVer = app.getVersion() || '0.2.0';
+    const update = await checkForUpdates(currentVer);
+
+    if (update && update.hasUpdate && update.asset) {
+      const { response } = await dialog.showMessageBox(mainWindow, {
+        type: 'question',
+        buttons: ['Update Now', 'Later'],
+        defaultId: 0,
+        cancelId: 1,
+        title: 'Update Available',
+        message: `A new version of DeepSeek Harness is available (v${update.version})!`,
+        detail: `Would you like to download and install the update now?\n\nCurrent: v${currentVer}  →  New: v${update.version}`
+      });
+
+      if (response === 0) {
+        // User agreed to update: download and install without starting the server
+        const ext = path.extname(update.asset.name);
+        const tempInstallerPath = path.join(os.tmpdir(), `deepseek-harness-update-${update.version}${ext}`);
+
+        setSplashStatus(`Downloading update v${update.version}...`);
+
+        await downloadFile(update.asset.browser_download_url, tempInstallerPath, (percent) => {
+          setSplashStatus(`Downloading update v${update.version} (${percent}%)...`);
+        });
+
+        setSplashStatus('Installing update and restarting...');
+        await applyUpdate(tempInstallerPath);
+        return; // Exit here
+      }
+    }
+  } catch (updateErr) {
+    console.warn('Auto-update check bypassed:', updateErr.message);
+  }
 
   // Track window resizing and moving
   mainWindow.on('resize', () => saveWindowState(mainWindow));

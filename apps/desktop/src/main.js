@@ -241,17 +241,17 @@ function stopBackend() {
 function createMenu() {
   const template = [
     {
-      label: 'Arquivo',
+      label: 'File',
       submenu: [
         {
-          label: 'Recarregar',
+          label: 'Reload',
           accelerator: 'CmdOrCtrl+R',
           click: () => {
             if (mainWindow) mainWindow.reload();
           }
         },
         {
-          label: 'Forçar Recarregamento',
+          label: 'Force Reload',
           accelerator: 'CmdOrCtrl+Shift+R',
           click: () => {
             if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
@@ -259,7 +259,7 @@ function createMenu() {
         },
         { type: 'separator' },
         {
-          label: 'Sair',
+          label: 'Quit',
           accelerator: 'CmdOrCtrl+Q',
           click: () => {
             app.quit();
@@ -268,27 +268,27 @@ function createMenu() {
       ]
     },
     {
-      label: 'Editar',
+      label: 'Edit',
       submenu: [
-        { label: 'Desfazer', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
-        { label: 'Refazer', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
+        { label: 'Undo', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+        { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
         { type: 'separator' },
-        { label: 'Recortar', accelerator: 'CmdOrCtrl+X', role: 'cut' },
-        { label: 'Copiar', accelerator: 'CmdOrCtrl+C', role: 'copy' },
-        { label: 'Colar', accelerator: 'CmdOrCtrl+V', role: 'paste' },
-        { label: 'Selecionar Tudo', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
+        { label: 'Cut', accelerator: 'CmdOrCtrl+X', role: 'cut' },
+        { label: 'Copy', accelerator: 'CmdOrCtrl+C', role: 'copy' },
+        { label: 'Paste', accelerator: 'CmdOrCtrl+V', role: 'paste' },
+        { label: 'Select All', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
       ]
     },
     {
-      label: 'Exibir',
+      label: 'View',
       submenu: [
-        { label: 'Aumentar Zoom', accelerator: 'CmdOrCtrl+Plus', role: 'zoomIn' },
-        { label: 'Diminuir Zoom', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
-        { label: 'Zoom Padrão', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
+        { label: 'Zoom In', accelerator: 'CmdOrCtrl+Plus', role: 'zoomIn' },
+        { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
+        { label: 'Reset Zoom', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
         { type: 'separator' },
-        { label: 'Tela Cheia', accelerator: 'F11', role: 'togglefullscreen' },
+        { label: 'Toggle Full Screen', accelerator: 'F11', role: 'togglefullscreen' },
         {
-          label: 'Ferramentas do Desenvolvedor',
+          label: 'Toggle Developer Tools',
           accelerator: 'CmdOrCtrl+Shift+I',
           click: () => {
             if (mainWindow) mainWindow.webContents.toggleDevTools();
@@ -297,22 +297,22 @@ function createMenu() {
       ]
     },
     {
-      label: 'Ajuda',
+      label: 'Help',
       submenu: [
         {
-          label: 'Documentação DeepSeek Harness',
+          label: 'DeepSeek Harness Documentation',
           click: () => {
             shell.openExternal('https://github.com/deepseek-ai/deepseek-harness');
           }
         },
         {
-          label: 'Sobre o DeepSeek Harness',
+          label: 'About DeepSeek Harness',
           click: () => {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'Sobre o DeepSeek Harness',
+              title: 'About DeepSeek Harness',
               message: 'DeepSeek Harness Desktop',
-              detail: `Versão: 0.1.1\nDeepSeek Harness Platform\nPowered by Electron & Cordis`,
+              detail: `Version: 0.1.1\nDeepSeek Harness Platform\nPowered by Electron & Cordis`,
               buttons: ['OK']
             });
           }
@@ -391,8 +391,8 @@ async function createMainWindow() {
     console.error(errMsg);
     appendLog(errMsg);
     dialog.showErrorBox(
-      'Erro ao Iniciar DeepSeek Harness',
-      `Não foi possível conectar ao servidor backend na porta ${serverPort}.\n\nDetalhes: ${err.message}\n\nConsulte os logs em: ${getLogPath()}`
+      'Error Starting DeepSeek Harness',
+      `Could not connect to the backend server on port ${serverPort}.\n\nDetails: ${err.message}\n\nCheck logs at: ${getLogPath()}`
     );
   }
 

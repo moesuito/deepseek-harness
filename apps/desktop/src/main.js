@@ -5,7 +5,18 @@ const net = require('net');
 const fs = require('fs');
 const os = require('os');
 const { spawn, execSync } = require('child_process');
-const { checkForUpdates, downloadFile, applyUpdate } = require('./updater.js');
+ const { checkForUpdates, downloadFile, applyUpdate } = require('./updater.js');
+
+// Uncaught exceptions (e.g. a stray EPIPE when the backend closes its stdout
+// pipe mid-drain) must not tear down the whole window: log and keep running.
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception in main process:', err);
+  try {
+    appendLog(`[uncaughtException] ${(err && err.stack) || err}`);
+  } catch {}
+});
+
+// App identities for Desktop environments
 
 // App identities for Desktop environments
 app.setName('DeepSeek Harness');
@@ -308,15 +319,23 @@ async function startBackend(port) {
   });
 
   backendProcess.stdout?.on('data', (data) => {
-    const text = data.toString().trim();
-    console.log(`[dsh backend]: ${text}`);
-    appendLog(`[stdout] ${text}`);
+    try {
+      const text = data.toString().trim();
+      console.log(`[dsh backend]: ${text}`);
+      appendLog(`[stdout] ${text}`);
+    } catch {
+      /* stdout write stream is closed once the backend exits */
+    }
   });
 
   backendProcess.stderr?.on('data', (data) => {
-    const text = data.toString().trim();
-    console.error(`[dsh backend err]: ${text}`);
-    appendLog(`[stderr] ${text}`);
+    try {
+      const text = data.toString().trim();
+      console.error(`[dsh backend err]: ${text}`);
+      appendLog(`[stderr] ${text}`);
+    } catch {
+      /* stderr write stream is closed once the backend exits */
+    }
   });
 
   backendProcess.on('exit', (code, signal) => {

@@ -189,7 +189,9 @@ function findDshTarget() {
     path.resolve(process.cwd(), 'lib/bin.js'),
 
     // App resources path
-    process.resourcesPath ? path.join(process.resourcesPath, 'apps/cli/lib/bin.js') : null,
+    // Packaged app ships every source file inside resources/app.asar; resolve the
+    // CLI entry there (no apps/cli/lib/bin.js exists on disk in a release build).
+    process.resourcesPath ? path.join(process.resourcesPath, 'app.asar') : null,
     process.resourcesPath ? path.join(process.resourcesPath, 'cli/lib/bin.js') : null,
     process.resourcesPath ? path.join(process.resourcesPath, 'app/apps/cli/lib/bin.js') : null,
 
